@@ -26,6 +26,11 @@ public class StoreController {
         storeService.consumeStock(stockDetails);
     }
 
+    @PostMapping("/consume-order")
+    public void consumeStockForOrder(@RequestBody OrderDTO orderDTO){
+        storeService.consumeStockForOrder(orderDTO);
+    }
+
     @PostMapping("/warehouses")
     public List<StoreDTOByWarehouse> getStoreEntriesByWarehouse(@RequestParam(name = "warehouse") Long warehouseId){
 

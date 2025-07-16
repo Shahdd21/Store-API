@@ -69,6 +69,36 @@ public class StoreServiceImp implements StoreService{
     }
 
     @Override
+    public void consumeStockForOrder(OrderDTO orderDTO){
+
+        List<Store> storeEntries = storeRepository.findByStoreId_ProductId(orderDTO.getProductId());
+        Store foundStore = null;
+
+        for(Store store : storeEntries){
+            if(store.getQuantity() >= orderDTO.getQuantity()){
+                foundStore = store;
+                break;
+            }
+        }
+
+        if(foundStore == null) throw new UnsupportedOperationException("The given quantity is more than what's found");
+
+        Integer initialQuantity = foundStore.getQuantity();
+
+        foundStore.setQuantity(initialQuantity- orderDTO.getQuantity());
+        foundStore.setUpdatedAt(LocalDate.now());
+        Store savedEntry = storeRepository.save(foundStore);
+
+        if (savedEntry.getQuantity() == 0) {
+            messageService.sendMessage(savedEntry.getStoreId().getProductId(), false);
+        }
+
+        historyService.saveOperation(new StockDetails(orderDTO.getProductId(),
+                        foundStore.getStoreId().getWarehouseId(), orderDTO.getQuantity()),
+                Operation.CONSUME);
+    }
+
+    @Override
     public void consumeStock(StockDetails stockDetails) {
 
         StoreId id = new StoreId(stockDetails.getProductId(), stockDetails.getWarehouseId());

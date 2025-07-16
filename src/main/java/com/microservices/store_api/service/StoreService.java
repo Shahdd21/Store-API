@@ -23,4 +23,6 @@ public interface StoreService {
     void deleteStoreEntryByStoreId(Long productId, Long warehouseId);
 
     List<StoreDTO> getStoreEntries();
+
+    void consumeStockForOrder(OrderDTO orderDTO);
 }
