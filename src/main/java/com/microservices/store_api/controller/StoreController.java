@@ -27,8 +27,8 @@ public class StoreController {
     }
 
     @PostMapping("/consume-order")
-    public void consumeStockForOrder(@RequestBody OrderDTO orderDTO){
-        storeService.consumeStockForOrder(orderDTO);
+    public boolean consumeStockForOrder(@RequestBody OrderDTO orderDTO){
+        return storeService.consumeStockForOrder(orderDTO);
     }
 
     @PostMapping("/warehouses")

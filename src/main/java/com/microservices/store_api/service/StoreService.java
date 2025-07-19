@@ -24,5 +24,5 @@ public interface StoreService {
 
     List<StoreDTO> getStoreEntries();
 
-    void consumeStockForOrder(OrderDTO orderDTO);
+    boolean consumeStockForOrder(OrderDTO orderDTO);
 }

@@ -69,7 +69,7 @@ public class StoreServiceImp implements StoreService{
     }
 
     @Override
-    public void consumeStockForOrder(OrderDTO orderDTO){
+    public boolean consumeStockForOrder(OrderDTO orderDTO){
 
         List<Store> storeEntries = storeRepository.findByStoreId_ProductId(orderDTO.getProductId());
         Store foundStore = null;
@@ -81,7 +81,7 @@ public class StoreServiceImp implements StoreService{
             }
         }
 
-        if(foundStore == null) throw new UnsupportedOperationException("The given quantity is more than what's found");
+        if(foundStore == null) return false;
 
         Integer initialQuantity = foundStore.getQuantity();
 
@@ -96,6 +96,8 @@ public class StoreServiceImp implements StoreService{
         historyService.saveOperation(new StockDetails(orderDTO.getProductId(),
                         foundStore.getStoreId().getWarehouseId(), orderDTO.getQuantity()),
                 Operation.CONSUME);
+
+        return true;
     }
 
     @Override
