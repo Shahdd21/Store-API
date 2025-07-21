@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient("PRODUCTSERVICE")
+@FeignClient(value = "PRODUCTSERVICE", url = "${product.service.url}")
 public interface ProductServiceClient {
 
     @PostMapping("/products/stores")
