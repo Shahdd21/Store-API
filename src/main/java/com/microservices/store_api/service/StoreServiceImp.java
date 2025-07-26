@@ -118,17 +118,25 @@ public class StoreServiceImp implements StoreService{
                 existingStore.get().setQuantity(initialQuantity - stockDetails.getQuantity());
                 existingStore.get().setUpdatedAt(LocalDate.now());
 
-                Store savedEntry = storeRepository.save(existingStore.get());
+                checkAvailability(stockDetails.getProductId());
 
-                if (savedEntry.getQuantity() == 0) {
-                    messageService.sendMessage(savedEntry.getStoreId().getProductId(), false);
-                }
             } else {
 
                 throw new NoSuchElementException("The product or warehouse doesn't exist");
             }
 
         historyService.saveOperation(stockDetails, Operation.CONSUME);
+    }
+
+    private void checkAvailability(Long productId) {
+
+        boolean available = storeRepository.findByStoreId_ProductId(productId)
+                .stream()
+                .anyMatch(store -> store.getQuantity() > 0);
+
+        if(!available){
+            messageService.sendMessage(productId, false);
+        }
     }
 
     @Override
