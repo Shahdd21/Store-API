@@ -63,6 +63,9 @@ public class StoreServiceImp implements StoreService{
         }
 
         storeRepository.save(store);
+
+        checkAvailability(stockDetails.getProductId());
+
         // add the transaction to history
         historyService.saveOperation(stockDetails, Operation.ADD);
 
@@ -136,6 +139,9 @@ public class StoreServiceImp implements StoreService{
 
         if(!available){
             messageService.sendMessage(productId, false);
+        }
+        else {
+            messageService.sendMessage(productId, true);
         }
     }
 
