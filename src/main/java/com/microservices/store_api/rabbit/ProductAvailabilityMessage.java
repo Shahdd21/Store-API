@@ -1,15 +1,15 @@
 package com.microservices.store_api.rabbit;
 
-public class Message {
+public class ProductAvailabilityMessage {
 
     private Long productId;
     private boolean isAvailable;
 
-    public Message(){
+    public ProductAvailabilityMessage(){
 
     }
 
-    public Message(Long productId, boolean isAvailable){
+    public ProductAvailabilityMessage(Long productId, boolean isAvailable){
         this.productId = productId;
         this.isAvailable = isAvailable;
     }

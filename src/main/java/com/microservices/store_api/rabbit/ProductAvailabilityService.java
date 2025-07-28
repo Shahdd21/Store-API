@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MessageService {
+public class ProductAvailabilityService {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public MessageService(RabbitTemplate rabbitTemplate) {
+    public ProductAvailabilityService(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -21,7 +21,7 @@ public class MessageService {
 
     public String sendMessage(Long productId, boolean isAvailable){
 
-        Message message = new Message(productId, isAvailable);
+        ProductAvailabilityMessage message = new ProductAvailabilityMessage(productId, isAvailable);
         rabbitTemplate.convertAndSend(exchange, routingKey, message);
 
         return "Notification sent to ProductService about product availability";

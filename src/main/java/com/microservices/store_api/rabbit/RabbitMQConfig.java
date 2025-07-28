@@ -1,6 +1,7 @@
 package com.microservices.store_api.rabbit;
 
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -17,9 +18,20 @@ public class RabbitMQConfig {
     @Value("${spring.rabbitmq.exchange}")
     private String exchange;
 
+    @Value("${spring.rabbitmq.consume.queue}")
+    private String consumeQueue;
+
+    @Value("${spring.rabbitmq.consume.routingkey}")
+    private String consumeRoutingKey;
+
     @Bean
     public Queue queue() {
         return new Queue(queueName, false);
+    }
+
+    @Bean
+    public Queue consumeQueue() {
+        return new Queue(consumeQueue, false);
     }
 
     @Bean
@@ -33,6 +45,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Binding consumeBinding() {
+        return BindingBuilder.bind(consumeQueue()).to(exchange()).with(consumeRoutingKey);
+    }
+
+    @Bean
     public MessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
@@ -42,5 +59,16 @@ public class RabbitMQConfig {
         final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(jsonMessageConverter());
         return rabbitTemplate;
+    }
+
+    @Bean
+    public SimpleRabbitListenerContainerFactory rabbitListenerContainerFactory(
+            ConnectionFactory connectionFactory,
+            MessageConverter messageConverter
+    ) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        factory.setMessageConverter(messageConverter);
+        return factory;
     }
 }

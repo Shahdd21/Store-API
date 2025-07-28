@@ -3,6 +3,7 @@ package com.microservices.store_api.service;
 import com.microservices.store_api.dto.*;
 
 import java.util.List;
+import java.util.Map;
 
 public interface StoreService {
 
@@ -24,5 +25,5 @@ public interface StoreService {
 
     List<StoreDTO> getStoreEntries();
 
-    boolean consumeStockForOrder(OrderDTO orderDTO);
+    void consumeStockForOrder(Map<Long, Integer> products_quantities);
 }

@@ -5,16 +5,13 @@ import com.microservices.store_api.entity.Store;
 import com.microservices.store_api.enums.Operation;
 import com.microservices.store_api.feign.ProductServiceClient;
 import com.microservices.store_api.keys.StoreId;
-import com.microservices.store_api.rabbit.MessageService;
+import com.microservices.store_api.rabbit.ProductAvailabilityService;
 import com.microservices.store_api.repository.StoreRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -24,14 +21,14 @@ public class StoreServiceImp implements StoreService{
     private final HistoryService historyService;
     private final WarehouseService warehouseService;
     private final ProductServiceClient productServiceClient;
-    private final MessageService messageService;
+    private final ProductAvailabilityService productAvailabilityService;
 
-    public StoreServiceImp(StoreRepository storeRepository, HistoryService historyService, WarehouseService warehouseService, ProductServiceClient productServiceClient, MessageService messageService) {
+    public StoreServiceImp(StoreRepository storeRepository, HistoryService historyService, WarehouseService warehouseService, ProductServiceClient productServiceClient, ProductAvailabilityService productAvailabilityService) {
         this.storeRepository = storeRepository;
         this.historyService = historyService;
         this.warehouseService = warehouseService;
         this.productServiceClient = productServiceClient;
-        this.messageService = messageService;
+        this.productAvailabilityService = productAvailabilityService;
     }
 
     @Override
@@ -72,35 +69,43 @@ public class StoreServiceImp implements StoreService{
     }
 
     @Override
-    public boolean consumeStockForOrder(OrderDTO orderDTO){
+    public void consumeStockForOrder(Map<Long, Integer> products_quantities){
 
-        List<Store> storeEntries = storeRepository.findByStoreId_ProductId(orderDTO.getProductId());
-        Store foundStore = null;
+        for(Map.Entry<Long, Integer> entry : products_quantities.entrySet()) {
+            List<Store> productsFound = storeRepository.findByStoreId_ProductId(entry.getKey());
 
-        for(Store store : storeEntries){
-            if(store.getQuantity() >= orderDTO.getQuantity()){
-                foundStore = store;
-                break;
-            }
+            Integer quantityToBeConsumed = entry.getValue();
+            Integer initialQuantity = entry.getValue();
+
+                for (Store store : productsFound) {
+
+                    if(quantityToBeConsumed <= 0) break;
+
+                    if(store.getQuantity() >= quantityToBeConsumed ){
+
+                        store.setQuantity(store.getQuantity()-quantityToBeConsumed);
+                        quantityToBeConsumed = 0;
+                    }
+
+                    else{
+                        quantityToBeConsumed -= store.getQuantity();
+                        store.setQuantity(0);
+                    }
+
+                    //save the modified entry
+                    storeRepository.save(store);
+
+                    //notify the product service if the product is totally sold out
+                    checkAvailability(entry.getKey());
+
+                    //log history
+                    historyService.saveOperation(new StockDetails(store.getStoreId().getProductId(), store.getStoreId().getWarehouseId(),
+                            initialQuantity), Operation.CONSUME);
+                }
+
+                if(quantityToBeConsumed > 0 ) System.out.println("Need additional quantities of product with id - " + entry.getKey()
+                + " quantity required: "+ quantityToBeConsumed);
         }
-
-        if(foundStore == null) return false;
-
-        Integer initialQuantity = foundStore.getQuantity();
-
-        foundStore.setQuantity(initialQuantity- orderDTO.getQuantity());
-        foundStore.setUpdatedAt(LocalDate.now());
-        Store savedEntry = storeRepository.save(foundStore);
-
-        if (savedEntry.getQuantity() == 0) {
-            messageService.sendMessage(savedEntry.getStoreId().getProductId(), false);
-        }
-
-        historyService.saveOperation(new StockDetails(orderDTO.getProductId(),
-                        foundStore.getStoreId().getWarehouseId(), orderDTO.getQuantity()),
-                Operation.CONSUME);
-
-        return true;
     }
 
     @Override
@@ -138,10 +143,10 @@ public class StoreServiceImp implements StoreService{
                 .anyMatch(store -> store.getQuantity() > 0);
 
         if(!available){
-            messageService.sendMessage(productId, false);
+            productAvailabilityService.sendMessage(productId, false);
         }
         else {
-            messageService.sendMessage(productId, true);
+            productAvailabilityService.sendMessage(productId, true);
         }
     }
 
