@@ -4,11 +4,13 @@ import java.util.Map;
 
 public class ConsumeStockMessage {
 
+    private Long orderId;
     private Map<Long, Integer> products_quantities;
 
     public ConsumeStockMessage(){}
 
-    public ConsumeStockMessage(Map<Long, Integer> products_quantities) {
+    public ConsumeStockMessage(Long orderId, Map<Long, Integer> products_quantities) {
+        this.orderId = orderId;
         this.products_quantities = products_quantities;
     }
 
@@ -18,5 +20,13 @@ public class ConsumeStockMessage {
 
     public void setProducts_quantities(Map<Long, Integer> products_quantities) {
         this.products_quantities = products_quantities;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
     }
 }

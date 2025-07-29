@@ -6,6 +6,7 @@ import com.microservices.store_api.enums.Operation;
 import com.microservices.store_api.feign.ProductServiceClient;
 import com.microservices.store_api.keys.StoreId;
 import com.microservices.store_api.rabbit.ProductAvailabilityService;
+import com.microservices.store_api.rabbit.StockResponse;
 import com.microservices.store_api.repository.StoreRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,9 @@ public class StoreServiceImp implements StoreService{
     }
 
     @Override
-    public void consumeStockForOrder(Map<Long, Integer> products_quantities){
+    public StockResponse consumeStockForOrder(Long orderId, Map<Long, Integer> products_quantities){
+
+        Map<String, Integer> insufficient = new HashMap<>();
 
         for(Map.Entry<Long, Integer> entry : products_quantities.entrySet()) {
             List<Store> productsFound = storeRepository.findByStoreId_ProductId(entry.getKey());
@@ -103,9 +106,20 @@ public class StoreServiceImp implements StoreService{
                             initialQuantity), Operation.CONSUME);
                 }
 
-                if(quantityToBeConsumed > 0 ) System.out.println("Need additional quantities of product with id - " + entry.getKey()
-                + " quantity required: "+ quantityToBeConsumed);
+                if(quantityToBeConsumed > 0 ) {
+                    String productName = productServiceClient
+                            .getProductDTOForStore(entry.getKey())
+                            .getName();
+
+                    insufficient.put(productName, quantityToBeConsumed);
+                }
         }
+
+        boolean success = insufficient.isEmpty();
+        String message = success ? "Stock consumed successfully" :
+                "Insufficient stock for some products, missing the following quantities: ";
+
+        return new StockResponse( orderId, success, message, insufficient);
     }
 
     @Override

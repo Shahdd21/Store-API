@@ -24,6 +24,12 @@ public class RabbitMQConfig {
     @Value("${spring.rabbitmq.consume.routingkey}")
     private String consumeRoutingKey;
 
+    @Value("${spring.rabbitmq.response.queue}")
+    private String responseQueue;
+
+    @Value("${spring.rabbitmq.response.routingkey}")
+    private String responseRoutingKey;
+
     @Bean
     public Queue queue() {
         return new Queue(queueName, false);
@@ -32,6 +38,11 @@ public class RabbitMQConfig {
     @Bean
     public Queue consumeQueue() {
         return new Queue(consumeQueue, false);
+    }
+
+    @Bean
+    public Queue responseQueue() {
+        return new Queue(responseQueue, true);
     }
 
     @Bean
@@ -47,6 +58,13 @@ public class RabbitMQConfig {
     @Bean
     public Binding consumeBinding() {
         return BindingBuilder.bind(consumeQueue()).to(exchange()).with(consumeRoutingKey);
+    }
+
+    @Bean
+    public Binding responseBinding() {
+        return BindingBuilder.bind(responseQueue())
+                .to(exchange())
+                .with(responseRoutingKey);
     }
 
     @Bean

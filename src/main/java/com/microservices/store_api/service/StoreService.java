@@ -1,6 +1,7 @@
 package com.microservices.store_api.service;
 
 import com.microservices.store_api.dto.*;
+import com.microservices.store_api.rabbit.StockResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -25,5 +26,5 @@ public interface StoreService {
 
     List<StoreDTO> getStoreEntries();
 
-    void consumeStockForOrder(Map<Long, Integer> products_quantities);
+    StockResponse consumeStockForOrder(Long orderId, Map<Long, Integer> products_quantities);
 }
